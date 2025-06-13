@@ -7,6 +7,7 @@ import { Readable } from 'stream';
 import config from './config';
 import logger from './logger';
 import { execute } from './utils';
+import { writeSmartTrimConcatInstructions, remove } from './storage';
 
 const BLACKFRAME_FILTER_OUTPUT_PATTERN = new RegExp(
   [
@@ -45,6 +46,7 @@ const CROPDETECT_FILTER_OUTPUT_PATTERN = new RegExp(
     /y:(?<y>\d+)/,
     /pts:\d+/,
     /t:(?<time>[\d.]+)/,
+    /limit:[\d.]+/,
     /crop=\d+:\d+:\d+:\d+/
   ]
     .map((r) => r.source)
@@ -712,12 +714,12 @@ const getFfmpegCopyFragmentArguments = (
   outputPath
 ].flat();
 
-const getFfmpegConcatenationArguments = (outputPath: string): Array<string> => [
+const getFfmpegConcatenationArguments = (outputPath: string, instructionsPath: string): Array<string> => [
   ['-hide_banner'],
   ['-f', 'concat'],
   ['-safe', '0'],
   ['-protocol_whitelist', 'pipe,file,fd'],
-  ['-i', '-'],
+  ['-i', instructionsPath ],
   ['-map', '0:0', '-c:0', 'copy', '-disposition:0', 'default'],
   ['-map', '0:1', '-c:1', 'copy', '-disposition:1', 'default'],
   ['-movflags', '+faststart'],
@@ -728,12 +730,12 @@ const getFfmpegConcatenationArguments = (outputPath: string): Array<string> => [
   outputPath
 ].flat();
 
-const concatSmartTrimFiles = async (
+export const concatSmartTrimFiles = async (
   outputPath: string, 
   startPath: string|null, 
   midPath: string, 
   endPath: string|null
-) => {
+): Promise<void> => {
   const instructionStream = new Readable();
   const instructions = [
     `file '${midPath}'`,
@@ -751,8 +753,10 @@ const concatSmartTrimFiles = async (
   });
   instructionStream.push(null);
 
-  const args = getFfmpegConcatenationArguments(outputPath);
-  await execute('ffmpeg', args, instructionStream);
+  const instructionsPath = await writeSmartTrimConcatInstructions(outputPath, instructions);
+  const args = getFfmpegConcatenationArguments(outputPath, instructionsPath);
+  await execute('ffmpeg', args);
+  await remove(instructionsPath);
 }
 
 const restoreSmartTrimMetadata = async (

@@ -7,6 +7,8 @@ import logger from './logger';
 
 const MAX_IN_PROGRESS_AGE = 3 * 60 * 60 * 1000;
 
+const SMARTTRIM_FILE_SUFFIX_INSTRUCTIONS = '.smarttrim.concat.txt';
+
 export enum FileType {
   FAILED,
   IN_PROGRESS,
@@ -153,3 +155,13 @@ export const writeMetadata = async (
 
   return metadataPath;
 };
+
+export const writeSmartTrimConcatInstructions = async (
+  outputPath: string,
+  instructions: Array<string>
+): Promise<string> => {
+  const instructionsPath = `${outputPath}${SMARTTRIM_FILE_SUFFIX_INSTRUCTIONS}`;
+  const instructionsContent = instructions.join('\n');
+  await writeFile(instructionsPath, instructionsContent);
+  return instructionsPath;
+}
