@@ -1,4 +1,4 @@
-FROM jrottenberg/ffmpeg:4.4.4-alpine313 AS base
+FROM jrottenberg/ffmpeg:7.1-alpine320 AS base
 
 ENV NODE_VERSION 20.11.1 
 

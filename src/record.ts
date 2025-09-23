@@ -61,7 +61,7 @@ export const findTrimParameters = async (
     return {};
   }
 
-  const start = last(startBoundaryCandidates).start;
+  const start = last(startBoundaryCandidates).start + ((last(startBoundaryCandidates).end - last(startBoundaryCandidates).start) / 4);
   logger.info(`Detected start at ${start} ms`);
 
   const endSearchTime = Math.max(
@@ -103,11 +103,12 @@ export const findTrimParameters = async (
     filteredCandidates
   );
 
-  const end = head(filteredCandidates)?.start;
-  if (!end) {
+  if (!head(filteredCandidates)?.start) {
     logger.info('No end boundary found');
     return { start };
   }
+
+  const end = head(filteredCandidates).start + ((head(filteredCandidates).end - head(filteredCandidates).start) / 4);
 
   logger.info(`Detected end at ${end} ms`);
   return { start, end };
@@ -193,7 +194,7 @@ export const postProcess = async (path: string, duration: number, programme: Pro
 
     const cropParameters = config.crop ? await findCropParameters(path, duration) : [];
 
-    await postProcessRecording(path, postProcessedPath, Math.max(0, start), end, cropParameters);
+    await postProcessRecording(path, postProcessedPath, Math.max(0, start), end, config.smartTrim, cropParameters);
     const postProcessedDuration = await getFileDuration(postProcessedPath);
     logger.info(`Post-processed file is ${postProcessedDuration} ms`);
 
@@ -208,6 +209,25 @@ export const postProcess = async (path: string, duration: number, programme: Pro
       result.keptOriginal = true;
     } else {
       await remove(path);
+    }
+    
+    // remove smart trim artifacts
+    // @TODO: actually check for smart trim artifacts before attempting to delete them
+    // @TODO: update metadata JSON file to include smart trim status
+    if (config.smartTrim) {
+      [
+        `${path}.smarttrim.start`,
+        `${path}.smarttrim.mid`,
+        `${path}.smarttrim.end`,
+        `${postProcessedPath}.smarttrim.FINAL.mp4`
+      ].forEach(async (filepath) => {
+        try {
+          await remove(filepath);
+        } catch (err) {
+          logger.debug(`Failed to delete ${filepath}; this is likely because the file never existed. Raw error follows.`);
+          logger.debug(err)
+        }
+      });
     }
 
     result.trimmed = start > 0;

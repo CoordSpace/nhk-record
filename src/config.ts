@@ -109,6 +109,15 @@ const config = yargs(process.argv.slice(2))
     describe: 'Attempt to automatically trim video',
     type: 'boolean',
     default: defaultConfig.trim
+  })
+  .option('S', {
+    alias: 'smart-trim',
+    describe: [
+      'Attempt to automatically trim video, re-rendering the ends of the video as needed to restore keyframe data',
+      '(this is CPU-intensive)'
+    ].join(' '),
+    type: 'boolean',
+    default: defaultConfig.smartTrim
   }).argv;
 
 //TODO: validate config
