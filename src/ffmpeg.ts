@@ -176,7 +176,7 @@ const getFfmpegBoundaryDetectionArguments = (
       '-filter_complex',
       [
         // Extract luma channels
-        '[0:0]extractplanes=y[vy]',
+        '[0:V]extractplanes=y[vy]',
         '[1]extractplanes=y[by]',
         '[2]extractplanes=y[wy]',
         '[3]extractplanes=y[wby]',
@@ -202,7 +202,7 @@ const getFfmpegBoundaryDetectionArguments = (
         // Detect Newsline intro
         '[vy1][nly]blend=difference,blackframe=99',
         // Detect silences greater than MINIMUM_BOUNDARY_SILENCE_SECONDS
-        `[0:1]silencedetect=n=-50dB:d=${MINIMUM_BOUNDARY_SILENCE_SECONDS}`
+        `[0:a]silencedetect=n=-50dB:d=${MINIMUM_BOUNDARY_SILENCE_SECONDS}`
       ].join(';')
     ],
     ['-f', 'null'],
@@ -318,7 +318,7 @@ const getFfmpegNewsBannerDetectionArguments = (path: string): Array<string> =>
       [
         'nullsrc=size=184x800:r=29.97[base]',
         // Extract luma channels
-        '[0:0]extractplanes=y[vy]',
+        '[0:V]extractplanes=y[vy]',
         '[1]extractplanes=y[iy]',
         '[vy]split=2[vy0][vy1]',
         '[iy]split=2[iy0][iy1]',
@@ -363,7 +363,7 @@ const getFfmpegCropDetectionArguments = (path: string, from: number, limit: numb
       '-filter_complex',
       [
         // Extract luma channels
-        '[0:0]extractplanes=y[vy]',
+        '[0:V]extractplanes=y[vy]',
         '[1]extractplanes=y[iy]',
         // Find difference with news background
         '[vy][iy]blend=difference,crop=1920:928:0:60,split=2[vc0][vc1]',
@@ -407,7 +407,7 @@ const getFfmpegCaptureArguments = (
     thumbnail
       ? [
           ['-i', '-'],
-          ['-map', '0'],
+          ['-map', '0:p:1'],
           ['-map', '1'],
           ['-disposition:v:1', 'attached_pic']
         ]
@@ -474,7 +474,7 @@ const generateFilterChain = (
     cropParameters.length > 0
       ? [
           'nullsrc=size=1920x1080:r=29.97[base]',
-          `[base][0:0]overlay='${generateTimeSequence(
+          `[base][0:V]overlay='${generateTimeSequence(
             calculateOverlayPosition,
             cropParameters
           )}':0:shortest=1[o]`,
@@ -485,6 +485,7 @@ const generateFilterChain = (
           '[s]crop=1920:1080:0:0[c]'
         ]
       : [],
+    // I think the stream specifier for the thumbnail might need to change, but first the broken crop detection needs to be dealt with
     hasThumbnail ? `[1:2]setpts=PTS+${start / 1000}/TB[tn]` : []
   ]
     .flat()
@@ -517,8 +518,8 @@ const getFfmpegPostProcessArguments = (
           ['-preset', 'veryfast'],
           ['-codec:v:0', 'libx264']
         ]
-      : ['-map', '0:0'],
-    ['-map', '0:1'],
+      : ['-map', '0:v'],
+    ['-map', '0:a'],
     hasThumbnail
       ? [
           ['-map', '[tn]'],
