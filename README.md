@@ -19,7 +19,7 @@ If you are running an existing instance of nhk-record that has stopped working, 
 ## Dependencies
 
 - [Node.js](https://github.com/nodejs/node) `>= 20.11.1`
-- [FFmpeg](https://github.com/FFmpeg/FFmpeg) `>= 4.4.4`
+- [FFmpeg](https://github.com/FFmpeg/FFmpeg) `>= 7.1`
 
 This software is only tested on Linux and macOS. For running on Windows, [Docker for Windows](https://docs.docker.com/docker-for-windows/install/) may be the best option. See [Running as a docker container](#running-as-a-docker-container).
 

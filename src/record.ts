@@ -108,7 +108,7 @@ export const findTrimParameters = async (
     return { start };
   }
 
-  const end = head(filteredCandidates).start + ((head(filteredCandidates).end - head(filteredCandidates).start) / 4);
+  const end = head(filteredCandidates).start + ((head(filteredCandidates).end - head(filteredCandidates).start) / 3);
 
   logger.info(`Detected end at ${end} ms`);
   return { start, end };
@@ -142,6 +142,7 @@ export const findCropParameters = async (
 
   const parameters: Array<CropParameters> = [];
   for (const banner of banners) {
+    logger.info(`banner start ${banner.start}, banner end ${banner.end}`);
     const startCropAreas = await detectCropArea(
       path,
       Math.max(0, banner.start - NEWS_BANNER_TRANSITION_DURATION / 2),
@@ -153,6 +154,7 @@ export const findCropParameters = async (
       Math.min(duration, banner.end - NEWS_BANNER_TRANSITION_DURATION / 2),
       NEWS_BANNER_TRANSITION_DURATION
     );
+    logger.info(`crop areas: ${JSON.stringify(startCropAreas)} | ${JSON.stringify(endCropAreas)}`);
 
     if (startCropAreas.length > 2 || endCropAreas.length > 2) {
       parameters.push(...startCropAreas);
@@ -178,6 +180,7 @@ export const postProcess = async (path: string, duration: number, programme: Pro
   const result = {
     trimmed: false,
     cropped: false,
+    cropData: [],
     keptOriginal: false
   };
 
@@ -214,7 +217,7 @@ export const postProcess = async (path: string, duration: number, programme: Pro
     // remove smart trim artifacts
     // @TODO: actually check for smart trim artifacts before attempting to delete them
     // @TODO: update metadata JSON file to include smart trim status
-    if (config.smartTrim) {
+    if (config.smartTrim && cropParameters.length == 0) {
       [
         `${path}.smarttrim.start`,
         `${path}.smarttrim.mid`,
@@ -232,6 +235,7 @@ export const postProcess = async (path: string, duration: number, programme: Pro
 
     result.trimmed = start > 0;
     result.cropped = cropParameters.length > 0;
+    result.cropData = cropParameters;
   } catch (err) {
     logger.error(err);
     try {
