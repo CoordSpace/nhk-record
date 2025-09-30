@@ -1,6 +1,6 @@
-import fetch from 'node-fetch';
 import { pick } from 'ramda';
 import config from './config';
+import { NHK_REQUEST_HEADERS } from './nhk';
 import logger from './logger';
 import { now, parseDate } from './utils';
 
@@ -8,12 +8,21 @@ const SCHEDULE_BEGIN_OFFSET = -2 * 60 * 60 * 1000;
 const SCHEDULE_END_OFFSET = 7 * 24 * 60 * 60 * 1000;
 const MAX_CACHE_AGE = 60 * 60 * 1000;
 
-let scheduleData: Array<Programme> = null;
+let scheduleData: Array<Programme> | null = null;
 let scheduleDataTimestamp = 0;
 
 const getApiKey = async (): Promise<string> => {
   try {
-    const res = await fetch(`${config.assetsUrl}/nhkworld/common/js/common.js`);
+    const res = await fetch(`${config.assetsUrl}/nhkworld/common/js/common.js`, {
+      headers: NHK_REQUEST_HEADERS
+    });
+
+    if (!res.ok) {
+      throw new Error(
+        `Failed to fetch NHK common assets (status ${res.status} ${res.statusText})`
+      );
+    }
+
     const text = await res.text();
     const match = text.match(/window\.nw_api_key=window\.nw_api_key\|\|"(?<apiKey>[^"]+)"/);
     const apiKey = match?.groups?.apiKey;
@@ -35,10 +44,17 @@ const getScheduleForPeriod = async (apiKey: string, start: Date, end: Date): Pro
   const endMillis = end.getTime();
 
   const res = await fetch(
-    `${config.scheduleUrl}/nhkworld/epg/v7b/world/s${startMillis}-e${endMillis}.json?apikey=${apiKey}`
+    `${config.scheduleUrl}/nhkworld/epg/v7b/world/s${startMillis}-e${endMillis}.json?apikey=${apiKey}`,
+    {
+      headers: NHK_REQUEST_HEADERS
+    }
   );
 
-  return await res.json();
+  if (!res.ok) {
+    throw new Error(`Failed to fetch NHK schedule (status ${res.status} ${res.statusText})`);
+  }
+
+  return (await res.json()) as Schedule;
 };
 
 export const getSchedule = async (): Promise<Array<Programme>> => {
@@ -54,7 +70,7 @@ export const getSchedule = async (): Promise<Array<Programme>> => {
   const rawSchedule = await getScheduleForPeriod(apiKey, start, end);
   const items = rawSchedule?.channel?.item;
 
-  if (items) {
+  if (items?.length) {
     return items.map((item) => ({
       ...pick(['title', 'subtitle', 'seriesId', 'airingId', 'description', 'thumbnail'])(item),
       content: item.content_clean,
@@ -62,7 +78,7 @@ export const getSchedule = async (): Promise<Array<Programme>> => {
       endDate: parseDate(item.endDate)
     }));
   } else {
-    throw new Error('Failed to retrieve schedule');
+    throw new Error('Failed to retrieve schedule (missing items array)');
   }
 };
 
@@ -92,7 +108,7 @@ export const getScheduleMemoized = async (): Promise<Array<Programme>> => {
   }
 };
 
-export const getCurrentProgramme = async (): Promise<Programme> => {
+export const getCurrentProgramme = async (): Promise<Programme | undefined> => {
   const programmes = await getScheduleMemoized();
   const currTime = now() + config.safetyBuffer;
 

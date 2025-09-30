@@ -1,5 +1,6 @@
+import { createHash } from 'crypto';
+import { createReadStream } from 'fs';
 import { mkdir, rename, stat, unlink, writeFile } from 'fs/promises';
-import hasha from 'hasha';
 import { join } from 'path';
 import sanitizeFilename from 'sanitize-filename';
 import config from './config';
@@ -89,7 +90,7 @@ export const renameWithSuffix = async (
   programme: Programme,
   fromSuffix: FileType,
   toSuffix: FileType
-): Promise<string> => {
+): Promise<string | null> => {
   const from = `${getSavePath(programme)}${getSuffix(fromSuffix, programme)}`;
   const to = `${getSavePath(programme)}${getSuffix(toSuffix, programme)}`;
 
@@ -105,11 +106,21 @@ export const renameWithSuffix = async (
   return to;
 };
 
-export const renameSuccessful = (programme: Programme): Promise<string> =>
+export const renameSuccessful = (programme: Programme): Promise<string | null> =>
   renameWithSuffix(programme, FileType.IN_PROGRESS, FileType.SUCCESSFUL);
 
-export const renameFailed = (programme: Programme): Promise<string> =>
+export const renameFailed = (programme: Programme): Promise<string | null> =>
   renameWithSuffix(programme, FileType.IN_PROGRESS, FileType.FAILED);
+
+const calculateSha256 = async (path: string): Promise<string> =>
+  new Promise((resolve, reject) => {
+    const hash = createHash('sha256');
+    const stream = createReadStream(path);
+
+    stream.on('error', reject);
+    stream.on('data', (chunk) => hash.update(chunk));
+    stream.on('end', () => resolve(hash.digest('hex')));
+  });
 
 export const writeThumbnail = async (
   programme: Programme,
@@ -133,7 +144,7 @@ export const writeMetadata = async (
 
   logger.debug(`Hashing '${path}'`);
   const hashStartTime = process.hrtime.bigint();
-  const sha256 = await hasha.fromFile(path, { algorithm: 'sha256' });
+  const sha256 = await calculateSha256(path);
   const hashDuration = process.hrtime.bigint() - hashStartTime;
   logger.info(`'${path}' sha256 hash is: ${sha256}, calculated in ${hashDuration / 1_000_000n} ms`);
 

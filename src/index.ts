@@ -49,11 +49,17 @@ const main = async () => {
       const { title, endDate } = programme;
 
       logger.info(`Currently airing programme is: ${title}`);
-      recordIfDesired(programme);
+      void recordIfDesired(programme).catch((error) =>
+        logger.error('Failed to record desired programme', { error })
+      );
 
-      const sleepMillis = endDate.getTime() - now() - config.safetyBuffer;
-      logger.info(`Sleeping ${sleepMillis / 1000} seconds until next programme`);
-      await sleep(sleepMillis);
+      const sleepMillis = Math.max(endDate.getTime() - now() - config.safetyBuffer, 0);
+      if (sleepMillis > 0) {
+        logger.info(`Sleeping ${sleepMillis / 1000} seconds until next programme`);
+        await sleep(sleepMillis);
+      } else {
+        logger.debug('Skipping sleep because the next programme should start immediately');
+      }
     } catch (e) {
       logger.error(e);
       await sleep(1000);
