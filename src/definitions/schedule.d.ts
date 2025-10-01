@@ -1,17 +1,26 @@
 interface ScheduleItem {
-  title: string;
-  subtitle: string;
-  content_clean: string;
-  description: string;
   seriesId: string;
   airingId: string;
-  pubDate: string;
-  endDate: string;
+  title: string;
+  episodeTitle: string;
+  description: string;
+  link: string;
   thumbnail: string;
+  firstShow: number;
+  startTime: string;
+  endTime: string;
+  endTimeReal: string;
+  extractProgram: number;
+  episodeId: string;
+  episodeThumbnailUrl: string;
+  episodeLink: string;
 }
 
 interface Schedule {
-  channel: {
-    item: Array<ScheduleItem>;
-  };
+  data: Array<ScheduleItem>;
+}
+
+interface DateTimeFormatPart {
+  type: string;
+  value: string;
 }

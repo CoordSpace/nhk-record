@@ -95,7 +95,7 @@ const parser = yargs(process.argv.slice(2))
   })
   .option('schedule-url', {
     alias: 's',
-    describe: 'NHK schedule API url',
+    describe: 'NHK schedule API base URL',
     type: 'string',
     default: defaultConfig.scheduleUrl
   })
