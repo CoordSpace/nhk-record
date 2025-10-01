@@ -404,6 +404,7 @@ const getFfmpegCaptureArguments = (
     '-y',
     config.threadLimit > 0 ? ['-threads', `${config.threadLimit}`] : [],
     ['-i', config.streamUrl],
+    ['-ss', '00:00'], // this should throw away up to five seconds of the start of the mpegts stream that comes before the first keyframe
     thumbnail
       ? [
           ['-i', '-'],
@@ -485,8 +486,7 @@ const generateFilterChain = (
           '[s]crop=1920:1080:0:0[c]'
         ]
       : [],
-    // I think the stream specifier for the thumbnail might need to change, but first the broken crop detection needs to be dealt with
-    hasThumbnail ? `[1:2]setpts=PTS+${start / 1000}/TB[tn]` : []
+    hasThumbnail ? `[1:v:1]setpts=PTS+${start / 1000}/TB[tn]` : []
   ]
     .flat()
     .join(';');
@@ -509,7 +509,6 @@ const getFfmpegPostProcessArguments = (
     hasThumbnail ? ['-i', inputPath] : [],
     ['-ss', `${start / 1000}`],
     end ? ['-to', `${end / 1000}`] : [],
-    ['-codec', 'copy'],
     generateFilterChain(start, cropParameters, hasThumbnail),
     cropParameters.length > 0
       ? [
@@ -520,6 +519,7 @@ const getFfmpegPostProcessArguments = (
         ]
       : ['-map', '0:v'],
     ['-map', '0:a'],
+    ['-codec', 'copy'],
     hasThumbnail
       ? [
           ['-map', '[tn]'],
