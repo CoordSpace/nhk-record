@@ -176,7 +176,7 @@ const getFfmpegBoundaryDetectionArguments = (
       '-filter_complex',
       [
         // Extract luma channels
-        '[0:0]extractplanes=y[vy]',
+        '[0:V]extractplanes=y[vy]',
         '[1]extractplanes=y[by]',
         '[2]extractplanes=y[wy]',
         '[3]extractplanes=y[wby]',
@@ -202,7 +202,7 @@ const getFfmpegBoundaryDetectionArguments = (
         // Detect Newsline intro
         '[vy1][nly]blend=difference,blackframe=99',
         // Detect silences greater than MINIMUM_BOUNDARY_SILENCE_SECONDS
-        `[0:1]silencedetect=n=-50dB:d=${MINIMUM_BOUNDARY_SILENCE_SECONDS}`
+        `[0:a]silencedetect=n=-50dB:d=${MINIMUM_BOUNDARY_SILENCE_SECONDS}`
       ].join(';')
     ],
     ['-f', 'null'],
@@ -318,7 +318,7 @@ const getFfmpegNewsBannerDetectionArguments = (path: string): Array<string> =>
       [
         'nullsrc=size=184x800:r=29.97[base]',
         // Extract luma channels
-        '[0:0]extractplanes=y[vy]',
+        '[0:V]extractplanes=y[vy]',
         '[1]extractplanes=y[iy]',
         '[vy]split=2[vy0][vy1]',
         '[iy]split=2[iy0][iy1]',
@@ -363,7 +363,7 @@ const getFfmpegCropDetectionArguments = (path: string, from: number, limit: numb
       '-filter_complex',
       [
         // Extract luma channels
-        '[0:0]extractplanes=y[vy]',
+        '[0:V]extractplanes=y[vy]',
         '[1]extractplanes=y[iy]',
         // Find difference with news background
         '[vy][iy]blend=difference,crop=1920:928:0:60,split=2[vc0][vc1]',
@@ -404,10 +404,11 @@ const getFfmpegCaptureArguments = (
     '-y',
     config.threadLimit > 0 ? ['-threads', `${config.threadLimit}`] : [],
     ['-i', config.streamUrl],
+    ['-ss', '00:00'], // this should throw away up to five seconds of the start of the mpegts stream that comes before the first keyframe
     thumbnail
       ? [
           ['-i', '-'],
-          ['-map', '0'],
+          ['-map', '0:p:1'],
           ['-map', '1'],
           ['-disposition:v:1', 'attached_pic']
         ]
@@ -474,7 +475,7 @@ const generateFilterChain = (
     cropParameters.length > 0
       ? [
           'nullsrc=size=1920x1080:r=29.97[base]',
-          `[base][0:0]overlay='${generateTimeSequence(
+          `[base][0:V]overlay='${generateTimeSequence(
             calculateOverlayPosition,
             cropParameters
           )}':0:shortest=1[o]`,
@@ -485,7 +486,7 @@ const generateFilterChain = (
           '[s]crop=1920:1080:0:0[c]'
         ]
       : [],
-    hasThumbnail ? `[1:2]setpts=PTS+${start / 1000}/TB[tn]` : []
+    hasThumbnail ? `[1:v:1]setpts=PTS+${start / 1000}/TB[tn]` : []
   ]
     .flat()
     .join(';');
@@ -508,7 +509,6 @@ const getFfmpegPostProcessArguments = (
     hasThumbnail ? ['-i', inputPath] : [],
     ['-ss', `${start / 1000}`],
     end ? ['-to', `${end / 1000}`] : [],
-    ['-codec', 'copy'],
     generateFilterChain(start, cropParameters, hasThumbnail),
     cropParameters.length > 0
       ? [
@@ -517,8 +517,9 @@ const getFfmpegPostProcessArguments = (
           ['-preset', 'veryfast'],
           ['-codec:v:0', 'libx264']
         ]
-      : ['-map', '0:0'],
-    ['-map', '0:1'],
+      : ['-map', '0:v'],
+    ['-map', '0:a'],
+    ['-codec', 'copy'],
     hasThumbnail
       ? [
           ['-map', '[tn]'],
