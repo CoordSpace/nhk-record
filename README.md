@@ -46,7 +46,7 @@ Options can be specified via the CLI or via a config file.
 ```
       --help                             Show help                     [boolean]
       --version                          Show version number           [boolean]
-  -a, --assets-url                       NHK assets url (for JS, may be deprecated)
+  -a, --assets-url                       NHK assets url (deprecated)
                                     [string] [default: "https://www3.nhk.or.jp"]
   -b, --safety-buffer                    Number of extra milliseconds to record
                                          before and after scheduled airtime
