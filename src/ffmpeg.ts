@@ -131,7 +131,7 @@ const NEWS_BANNER_STRATEGY = {
 const SMARTTRIM_FILE_SUFFIX_START = '.smarttrim.start';
 const SMARTTRIM_FILE_SUFFIX_MID = '.smarttrim.mid';
 const SMARTTRIM_FILE_SUFFIX_END = '.smarttrim.end';
-const SMARTTRIM_MIN_FRAGMENT_LENGTH_MS = 300;
+const SMARTTRIM_MIN_FRAGMENT_LENGTH_MS = 750;
 
 const getFfprobeArguments = (path: string): Array<string> =>
   [['-v', 'quiet'], ['-print_format', 'json'], '-show_format', path].flat();
