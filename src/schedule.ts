@@ -15,9 +15,9 @@ const getScheduleForPeriod = async (start: Date, end: Date): Promise<Schedule> =
   logger.debug(`Getting schedule data for ${start.toDateString()}`);
   const finalSchedule = await getScheduleForDay(start);
 
-  if (getApiDate(start) !== getApiDate(end)) {
+  if (getEpgEndpointDate(start) !== getEpgEndpointDate(end)) {
     const cursorDate = new Date(start.valueOf());
-    while (getApiDate(cursorDate) !== getApiDate(end)) {
+    while (getEpgEndpointDate(cursorDate) !== getEpgEndpointDate(end)) {
       cursorDate.setDate(cursorDate.getDate() + 1);
       logger.debug(`Getting schedule data for ${cursorDate.toDateString()}`);
       let cursorDateSchedule = await getScheduleForDay(cursorDate);
@@ -29,7 +29,7 @@ const getScheduleForPeriod = async (start: Date, end: Date): Promise<Schedule> =
 }
 
 const getScheduleForDay = async (day: Date): Promise<Schedule> => {
-  const scheduleEndpoint = `${config.scheduleUrl}/epg/w/${getApiDate(day)}.json`;
+  const scheduleEndpoint = `${config.scheduleUrl}/epg/w/${getEpgEndpointDate(day)}.json`;
   logger.debug(`Calling ${scheduleEndpoint} for data`);
   const res = await fetch(
     scheduleEndpoint,
@@ -54,17 +54,16 @@ export const getSchedule = async (): Promise<Array<Programme>> => {
   const items = rawSchedule?.data;
 
   if (items?.length) {
-    return items
-      .map((item) => ({
-        ...pick(['title', 'seriesId', 'airingId', 'description'])(item),
-        subtitle: item.episodeTitle,
-        thumbnail: item.episodeThumbnailUrl || item.thumbnail,
-        content: item.description,
-        startDate: new Date(item.startTime),
-        endDate: new Date(item.endTimeReal)
-      }));
+    return items.map((item) => ({
+      ...pick(['title', 'seriesId', 'airingId', 'description'])(item),
+      subtitle: item.episodeTitle,
+      thumbnail: item.episodeThumbnailUrl || item.thumbnail,
+      content: item.description,
+      startDate: new Date(item.startTime),
+      endDate: new Date(item.endTimeReal)
+    }));
   } else {
-      throw new Error('Failed to retrieve schedule (missing items array)');
+    throw new Error('Failed to retrieve schedule (missing items array)');
   }
 };
 
@@ -105,7 +104,7 @@ export const getCurrentProgramme = async (): Promise<Programme | undefined> => {
   return programme;
 };
 
-const getApiDate = (day: Date): string => {
+const getEpgEndpointDate = (day: Date): string => {
   // each day contains a 24-hour period in JST (UTC+9)
   const tzFormat = new Intl.DateTimeFormat('en-US', {
     timeZone: 'Asia/Tokyo',
