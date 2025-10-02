@@ -257,7 +257,7 @@ export const record = async (programme: Programme): Promise<void> => {
   logger.info(`Recording ${programme.title} for ${targetSeconds} seconds`);
   const recordingStart = currDate();
   try {
-    const thumbnailData = await getThumbnail(programme.thumbnail);
+    const thumbnailData = programme.thumbnail !== '' ? await getThumbnail(programme.thumbnail) : null;
     await captureStream(path, targetSeconds, programme, thumbnailData);
 
     const recordingEnd = currDate();

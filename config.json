@@ -5,7 +5,7 @@
   "logFile": "/logs/nhk-record.log",
   "logLevelConsole": "debug",
   "logLevelFile": "debug",
-  "matchPattern": ["*"],
+  "matchPattern": ["!(INFO)"],
   "minimumDuration": 240000,
   "safetyBuffer": 40000,
   "saveDir": "/recordings/",
