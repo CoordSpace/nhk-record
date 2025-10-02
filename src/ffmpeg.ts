@@ -131,7 +131,7 @@ const NEWS_BANNER_STRATEGY = {
 const SMARTTRIM_FILE_SUFFIX_START = '.smarttrim.start';
 const SMARTTRIM_FILE_SUFFIX_MID = '.smarttrim.mid';
 const SMARTTRIM_FILE_SUFFIX_END = '.smarttrim.end';
-const SMARTTRIM_MIN_FRAGMENT_LENGTH_MS = 750;
+const SMARTTRIM_MIN_FRAGMENT_LENGTH_MS = 300;
 
 const getFfprobeArguments = (path: string): Array<string> =>
   [['-v', 'quiet'], ['-print_format', 'json'], '-show_format', path].flat();
@@ -434,17 +434,16 @@ const getFfmpegCaptureArguments = (
     '-y',
     config.threadLimit > 0 ? ['-threads', `${config.threadLimit}`] : [],
     ['-i', config.streamUrl],
-    ['-ss', '00:00'], // this should throw away up to five seconds of the start of the mpegts stream that comes before the first keyframe
-    thumbnail
+    thumbnail ? ['-i', '-'] : [],
+    ['-map', '0:p:1'],
+    thumbnail 
       ? [
-          ['-i', '-'],
-          ['-map', '0:p:1'],
           ['-map', '1'],
           ['-disposition:v:1', 'attached_pic']
-        ]
+        ] 
       : [],
-    ['-t', `${durationSeconds}`],
     ['-codec', 'copy'],
+    ['-t', `${durationSeconds}`],
     ['-f', 'mp4'],
     programme.title ? ['-metadata', `show=${programme.title}`] : [],
     programme.subtitle ? ['-metadata', `title=${programme.subtitle}`] : [],
@@ -658,8 +657,8 @@ const getFfmpegRenderCapArguments = (
   ['-i', inputPath],
   ['-ss', '0'],
   ['-t', `${(end - start) / 1000}`],
-  ['-map', '0:0', '-c:0', 'libx264', '-b:0', `${bitrate}`],
-  ['-map', '0:1', '-c:1', 'copy'],
+  ['-map', '0:V', '-c:V', 'libx264', '-b:0', `${bitrate}`],
+  ['-map', '0:a', '-c:a', 'copy'],
   ['-video_track_timescale', '90000'],
   ['-ignore_unknown'],
   ['-f', 'mp4'],
@@ -707,8 +706,8 @@ const getFfmpegCopyFragmentArguments = (
   ['-i', inputPath],
   ['-ss', '0'],
   ['-t', `${(end - start) / 1000}`],
-  ['-map', '0:0', '-c:0', 'copy'],
-  ['-map', '0:1', '-c:1', 'copy'],
+  ['-map', '0:V'],
+  ['-map', '0:a'],
   ['-video_track_timescale', '90000'],
   ['-ignore_unknown'],
   ['-f', 'mp4'],
@@ -721,8 +720,8 @@ const getFfmpegConcatenationArguments = (outputPath: string, instructionsPath: s
   ['-safe', '0'],
   ['-protocol_whitelist', 'pipe,file,fd'],
   ['-i', instructionsPath ],
-  ['-map', '0:0', '-c:0', 'copy', '-disposition:0', 'default'],
-  ['-map', '0:1', '-c:1', 'copy', '-disposition:1', 'default'],
+  ['-map', '0:V', '-c:V', 'copy', '-disposition:0', 'default'],
+  ['-map', '0:a', '-c:a', 'copy', '-disposition:1', 'default'],
   ['-movflags', '+faststart'],
   ['-default_mode', 'infer_no_subs'],
   ['-video_track_timescale', '90000'],

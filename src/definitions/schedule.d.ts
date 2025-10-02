@@ -12,7 +12,7 @@ interface ScheduleItem {
   endTimeReal: string;
   extractProgram: number;
   episodeId: string;
-  episodeThumbnailUrl: string;
+  episodeThumbnailURL: string;
   episodeLink: string;
 }
 
