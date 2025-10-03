@@ -708,6 +708,7 @@ const getFfmpegCopyFragmentArguments = (
   ['-t', `${(end - start) / 1000}`],
   ['-map', '0:V'],
   ['-map', '0:a'],
+  ['-c', 'copy'],
   ['-video_track_timescale', '90000'],
   ['-ignore_unknown'],
   ['-f', 'mp4'],
