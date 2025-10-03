@@ -11,7 +11,7 @@ const parser = yargs(process.argv.slice(2))
   .parserConfiguration({ 'strip-aliased': true, 'strip-dashed': true })
   .option('assets-url', {
     alias: 'a',
-    describe: 'NHK assets url (for JS & thumbnails)',
+    describe: 'NHK assets url (deprecated)',
     type: 'string',
     default: defaultConfig.assetsUrl
   })
@@ -95,7 +95,7 @@ const parser = yargs(process.argv.slice(2))
   })
   .option('schedule-url', {
     alias: 's',
-    describe: 'NHK schedule API url',
+    describe: 'NHK schedule API base URL',
     type: 'string',
     default: defaultConfig.scheduleUrl
   })

@@ -46,7 +46,7 @@ Options can be specified via the CLI or via a config file.
 ```
       --help                             Show help                     [boolean]
       --version                          Show version number           [boolean]
-  -a, --assets-url                       NHK assets url (for JS & thumbnails)
+  -a, --assets-url                       NHK assets url (deprecated)
                                     [string] [default: "https://www3.nhk.or.jp"]
   -b, --safety-buffer                    Number of extra milliseconds to record
                                          before and after scheduled airtime
@@ -78,7 +78,7 @@ Options can be specified via the CLI or via a config file.
                                                                         "debug"]
   -m, --match-pattern                    Glob pattern of desired program name
                                          (can be used multiple times)
-                                                        [array] [default: ["*"]]
+                                                        [array] [default: ["!(INFO)"]]
   -o, --time-offset                      Time offset relative to system time in
                                          milliseconds (e.g. to handle stream
                                          delays)           [number] [default: 0]
@@ -118,11 +118,12 @@ The location of the config file can be specified with the `-c` option.
 
 Match patterns use [micromatch](https://github.com/micromatch/micromatch). For example:
 
-| Description                | Pattern                          |
-| -------------------------- | -------------------------------- |
-| Match everything           | `["*"]`                          |
-| Japanology and Lunch ON!   | `["*japanology*", "*lunch*"]`    |
-| Everything except Newsline | `["!(*newsline*\|*nl bridge*)"]` |
+| Description                  | Pattern                          |
+| ---------------------------- | -------------------------------- |
+| Match everything             | `["*"]`                          |
+| Japanology and Lunch ON!     | `["*japanology*", "*lunch*"]`    |
+| Everything except Newsline   | `["!(*newsline*\|*nl bridge*)"]` |
+| Everything except NHK promos | `["!(INFO)"]`                    |
 
 ### Crop & Trim
 

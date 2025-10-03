@@ -3,7 +3,7 @@ import { NHK_REQUEST_HEADERS } from './nhk';
 import logger from './logger';
 
 export const getThumbnail = async (thumbnailUri: string): Promise<Buffer | null> => {
-  const url = `${config.assetsUrl}${thumbnailUri}`;
+  const url = `${thumbnailUri}`;
 
   logger.info(`Retrieving thumbnail: ${url}`);
   try {
