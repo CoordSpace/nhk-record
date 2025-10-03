@@ -61,7 +61,7 @@ export const findTrimParameters = async (
     return {};
   }
 
-  const start = last(startBoundaryCandidates).start;
+  const start = last(startBoundaryCandidates).start + ((last(startBoundaryCandidates).end - last(startBoundaryCandidates).start) / 4);
   logger.info(`Detected start at ${start} ms`);
 
   const endSearchTime = Math.max(
@@ -103,11 +103,12 @@ export const findTrimParameters = async (
     filteredCandidates
   );
 
-  const end = head(filteredCandidates)?.start;
-  if (!end) {
+  if (!head(filteredCandidates)?.start) {
     logger.info('No end boundary found');
     return { start };
   }
+
+  const end = head(filteredCandidates).start + ((head(filteredCandidates).end - head(filteredCandidates).start) / 3);
 
   logger.info(`Detected end at ${end} ms`);
   return { start, end };
@@ -141,6 +142,7 @@ export const findCropParameters = async (
 
   const parameters: Array<CropParameters> = [];
   for (const banner of banners) {
+    logger.info(`banner start ${banner.start}, banner end ${banner.end}`);
     const startCropAreas = await detectCropArea(
       path,
       Math.max(0, banner.start - NEWS_BANNER_TRANSITION_DURATION / 2),
@@ -152,6 +154,7 @@ export const findCropParameters = async (
       Math.min(duration, banner.end - NEWS_BANNER_TRANSITION_DURATION / 2),
       NEWS_BANNER_TRANSITION_DURATION
     );
+    logger.info(`crop areas: ${JSON.stringify(startCropAreas)} | ${JSON.stringify(endCropAreas)}`);
 
     if (startCropAreas.length > 2 || endCropAreas.length > 2) {
       parameters.push(...startCropAreas);
@@ -177,6 +180,7 @@ export const postProcess = async (path: string, duration: number, programme: Pro
   const result = {
     trimmed: false,
     cropped: false,
+    cropData: [],
     keptOriginal: false
   };
 
@@ -193,7 +197,7 @@ export const postProcess = async (path: string, duration: number, programme: Pro
 
     const cropParameters = config.crop ? await findCropParameters(path, duration) : [];
 
-    await postProcessRecording(path, postProcessedPath, Math.max(0, start), end, cropParameters);
+    await postProcessRecording(path, postProcessedPath, Math.max(0, start), end, config.smartTrim, cropParameters);
     const postProcessedDuration = await getFileDuration(postProcessedPath);
     logger.info(`Post-processed file is ${postProcessedDuration} ms`);
 
@@ -209,9 +213,29 @@ export const postProcess = async (path: string, duration: number, programme: Pro
     } else {
       await remove(path);
     }
+    
+    // remove smart trim artifacts
+    // @TODO: actually check for smart trim artifacts before attempting to delete them
+    // @TODO: update metadata JSON file to include smart trim status
+    if (config.smartTrim && cropParameters.length == 0) {
+      [
+        `${path}.smarttrim.start`,
+        `${path}.smarttrim.mid`,
+        `${path}.smarttrim.end`,
+        `${postProcessedPath}.smarttrim.FINAL.mp4`
+      ].forEach(async (filepath) => {
+        try {
+          await remove(filepath);
+        } catch (err) {
+          logger.debug(`Failed to delete ${filepath}; this is likely because the file never existed. Raw error follows.`);
+          logger.debug(err)
+        }
+      });
+    }
 
     result.trimmed = start > 0;
     result.cropped = cropParameters.length > 0;
+    result.cropData = cropParameters;
   } catch (err) {
     logger.error(err);
     try {
@@ -233,7 +257,7 @@ export const record = async (programme: Programme): Promise<void> => {
   logger.info(`Recording ${programme.title} for ${targetSeconds} seconds`);
   const recordingStart = currDate();
   try {
-    const thumbnailData = await getThumbnail(programme.thumbnail);
+    const thumbnailData = programme.thumbnail !== '' ? await getThumbnail(programme.thumbnail) : null;
     await captureStream(path, targetSeconds, programme, thumbnailData);
 
     const recordingEnd = currDate();
