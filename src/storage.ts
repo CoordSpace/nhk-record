@@ -8,6 +8,8 @@ import logger from './logger';
 
 const MAX_IN_PROGRESS_AGE = 3 * 60 * 60 * 1000;
 
+const SMARTTRIM_FILE_SUFFIX_INSTRUCTIONS = '.smarttrim.concat.txt';
+
 export enum FileType {
   FAILED,
   IN_PROGRESS,
@@ -33,10 +35,10 @@ const getSuffix = (suffixType: FileType, programme: Programme): string =>
       `.${sanitizeFilename(programme.startDate.toISOString())}.failed`,
     [FileType.IN_PROGRESS]: () => '.inprogress',
     [FileType.METADATA]: () => '.metadata',
+    [FileType.POST_PROCESSED]: () => '.postprocessed',
     [FileType.RAW]: () => '.raw',
     [FileType.SUCCESSFUL]: () => '.mp4',
-    [FileType.THUMBNAIL]: () => '.jpg',
-    [FileType.POST_PROCESSED]: () => '.postprocessed'
+    [FileType.THUMBNAIL]: () => '.jpg'
   }[suffixType](programme));
 
 export const makeSaveDirectory = async (): Promise<string> => {
@@ -164,3 +166,13 @@ export const writeMetadata = async (
 
   return metadataPath;
 };
+
+export const writeSmartTrimConcatInstructions = async (
+  outputPath: string,
+  instructions: Array<string>
+): Promise<string> => {
+  const instructionsPath = `${outputPath}${SMARTTRIM_FILE_SUFFIX_INSTRUCTIONS}`;
+  const instructionsContent = instructions.join('\n');
+  await writeFile(instructionsPath, instructionsContent);
+  return instructionsPath;
+}

@@ -11,7 +11,7 @@ const parser = yargs(process.argv.slice(2))
   .parserConfiguration({ 'strip-aliased': true, 'strip-dashed': true })
   .option('assets-url', {
     alias: 'a',
-    describe: 'NHK assets url (for JS & thumbnails)',
+    describe: 'NHK assets url (deprecated)',
     type: 'string',
     default: defaultConfig.assetsUrl
   })
@@ -95,7 +95,7 @@ const parser = yargs(process.argv.slice(2))
   })
   .option('schedule-url', {
     alias: 's',
-    describe: 'NHK schedule API url',
+    describe: 'NHK schedule API base URL',
     type: 'string',
     default: defaultConfig.scheduleUrl
   })
@@ -110,6 +110,15 @@ const parser = yargs(process.argv.slice(2))
     describe: 'Attempt to automatically trim video',
     type: 'boolean',
     default: defaultConfig.trim
+  })
+  .option('smart-trim', {
+    alias: 'S',
+    describe: [
+      'Attempt to automatically trim video, re-rendering the ends of the video as needed to restore keyframe data',
+      '(this is CPU-intensive)'
+    ].join(' '),
+    type: 'boolean',
+    default: defaultConfig.smartTrim
   });
 
 const parsedArgs = parser.parseSync();
