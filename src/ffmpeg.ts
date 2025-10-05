@@ -516,7 +516,7 @@ const getFfmpegPostProcessArguments = (
           ['-preset', 'veryfast'],
           ['-codec:v:0', 'libx264']
         ]
-      : ['-map', '0:v'],
+      : ['-map', '0:V'],
     ['-map', '0:a'],
     ['-codec', 'copy'],
     hasThumbnail
