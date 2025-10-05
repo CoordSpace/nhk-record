@@ -435,7 +435,8 @@ const getFfmpegCaptureArguments = (
     config.threadLimit > 0 ? ['-threads', `${config.threadLimit}`] : [],
     ['-i', config.streamUrl],
     thumbnail ? ['-i', '-'] : [],
-    ['-map', '0:p:1'],
+    ['-map', '0:p:1:V'],
+    ['-map', '0:p:1:a'],
     thumbnail 
       ? [
           ['-map', '1'],
