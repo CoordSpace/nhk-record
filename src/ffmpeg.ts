@@ -404,17 +404,16 @@ const getFfmpegCaptureArguments = (
     '-y',
     config.threadLimit > 0 ? ['-threads', `${config.threadLimit}`] : [],
     ['-i', config.streamUrl],
-    ['-ss', '00:00'], // this should throw away up to five seconds of the start of the mpegts stream that comes before the first keyframe
-    thumbnail
+    thumbnail ? ['-i', '-'] : [],
+    ['-map', '0:p:1'],
+    thumbnail 
       ? [
-          ['-i', '-'],
-          ['-map', '0:p:1'],
           ['-map', '1'],
           ['-disposition:v:1', 'attached_pic']
-        ]
+        ] 
       : [],
-    ['-t', `${durationSeconds}`],
     ['-codec', 'copy'],
+    ['-t', `${durationSeconds}`],
     ['-f', 'mp4'],
     programme.title ? ['-metadata', `show=${programme.title}`] : [],
     programme.subtitle ? ['-metadata', `title=${programme.subtitle}`] : [],
@@ -517,7 +516,7 @@ const getFfmpegPostProcessArguments = (
           ['-preset', 'veryfast'],
           ['-codec:v:0', 'libx264']
         ]
-      : ['-map', '0:v'],
+      : ['-map', '0:V'],
     ['-map', '0:a'],
     ['-codec', 'copy'],
     hasThumbnail
